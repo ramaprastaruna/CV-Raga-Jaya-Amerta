@@ -18,6 +18,7 @@ interface SalesData {
 export const Reports: React.FC<ReportsProps> = ({ onError }) => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'all' | 'day' | 'month' | 'year'>('all');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [salesData, setSalesData] = useState<SalesData>({
     totalRevenue: 0,
     totalTransactions: 0,
@@ -26,13 +27,29 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     topProducts: [],
   });
 
+  const monthNames = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+
   useEffect(() => {
     fetchSalesData();
-  }, [period]);
+  }, [period, selectedMonth]);
 
   const getDateRange = () => {
     const now = new Date();
     let startDate = new Date();
+    let endDate = new Date(now);
 
     if (period === 'all') {
       startDate = new Date(0);
@@ -42,8 +59,8 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
           startDate.setHours(0, 0, 0, 0);
           break;
         case 'month':
-          startDate.setDate(1);
-          startDate.setHours(0, 0, 0, 0);
+          startDate = new Date(now.getFullYear(), selectedMonth, 1);
+          endDate = new Date(now.getFullYear(), selectedMonth + 1, 1);
           break;
         case 'year':
           startDate.setMonth(0, 1);
@@ -52,7 +69,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
       }
     }
 
-    return { startDate: startDate.toISOString(), endDate: now.toISOString() };
+    return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
   };
 
   const fetchSalesData = async () => {
@@ -140,7 +157,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h2 className="text-2xl font-bold text-black">Laporan Penjualan</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {(['all', 'day', 'month', 'year'] as const).map((p) => (
             <Button
               key={p}
@@ -151,6 +168,16 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
               {periodLabels[p]}
             </Button>
           ))}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+            aria-label="Pilih Bulan"
+          >
+            {monthNames.map((m, idx) => (
+              <option key={m} value={idx}>{m}</option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -18,7 +18,23 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithItems | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [timePeriod, setTimePeriod] = useState<'all' | 'today' | 'month' | 'year'>('all');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; transactionId: string | null; transactionNumber: string }>({ isOpen: false, transactionId: null, transactionNumber: '' });
+
+  const monthNames = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
 
   useEffect(() => {
     fetchTransactions();
@@ -26,7 +42,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
   useEffect(() => {
     filterTransactions();
-  }, [searchQuery, transactions, timePeriod]);
+  }, [searchQuery, transactions, timePeriod, selectedMonth]);
 
   const fetchTransactions = async () => {
     try {
@@ -55,13 +71,17 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfSelectedMonth = new Date(now.getFullYear(), selectedMonth, 1);
+    const startOfNextMonth = new Date(now.getFullYear(), selectedMonth + 1, 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
 
     if (timePeriod === 'today') {
       filtered = filtered.filter((t) => new Date(t.created_at) >= today);
     } else if (timePeriod === 'month') {
-      filtered = filtered.filter((t) => new Date(t.created_at) >= startOfMonth);
+      filtered = filtered.filter((t) => {
+        const created = new Date(t.created_at);
+        return created >= startOfSelectedMonth && created < startOfNextMonth;
+      });
     } else if (timePeriod === 'year') {
       filtered = filtered.filter((t) => new Date(t.created_at) >= startOfYear);
     }
@@ -167,7 +187,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
         <div>
           <h2 className="text-2xl font-bold text-black">Riwayat Nota</h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Button
             onClick={() => setTimePeriod('all')}
             variant={timePeriod === 'all' ? 'primary' : 'secondary'}
@@ -196,6 +216,16 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
           >
             Tahun Ini
           </Button>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+            aria-label="Pilih Bulan"
+          >
+            {monthNames.map((m, idx) => (
+              <option key={m} value={idx}>{m}</option>
+            ))}
+          </select>
         </div>
       </div>
 
