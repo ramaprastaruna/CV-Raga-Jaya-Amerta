@@ -16,6 +16,7 @@ interface Transaction {
   transaction_number: string;
   customer_name: string;
   customer_address?: string;
+  sales_name?: string;
   transaction_date: string;
   payment_terms_days?: string;
   transaction_items: TransactionItem[];
@@ -110,16 +111,24 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   drawHeader();
 
   const customerY = 30;
-  const boxHeight = 15;
+  const boxHeight = 16;
+  const gapBetweenBoxes = 3;
+  const totalContentWidth = pageWidth - 2 * margin;
+  const leftBoxWidth = (totalContentWidth - gapBetweenBoxes) / 2;
+  const rightBoxWidth = (totalContentWidth - gapBetweenBoxes) / 2;
+  const rightBoxX = margin + leftBoxWidth + gapBetweenBoxes;
 
   doc.setFillColor(255, 255, 255);
-  doc.rect(margin, customerY, (pageWidth - 2 * margin) / 2 - 2, boxHeight, 'F');
-  doc.rect(pageWidth / 2 + 2, customerY, (pageWidth - 2 * margin) / 2 - 2, boxHeight, 'F');
+  doc.rect(margin, customerY, leftBoxWidth, boxHeight, 'F');
+  doc.rect(rightBoxX, customerY, rightBoxWidth, boxHeight, 'F');
 
   doc.setDrawColor(210, 210, 210);
-  doc.setLineWidth(0.25);
-  doc.rect(margin, customerY, (pageWidth - 2 * margin) / 2 - 2, boxHeight);
-  doc.rect(pageWidth / 2 + 2, customerY, (pageWidth - 2 * margin) / 2 - 2, boxHeight);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, customerY, leftBoxWidth, boxHeight);
+  doc.rect(rightBoxX, customerY, rightBoxWidth, boxHeight);
+
+  const leftBoxRightEdge = margin + leftBoxWidth;
+  const salesXPosition = leftBoxRightEdge - 2;
 
   doc.setFontSize(6);
   doc.setFont('helvetica', 'bold');
@@ -134,11 +143,21 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
     doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    const addressLines = doc.splitTextToSize(transaction.customer_address, (pageWidth - 2 * margin) / 2 - 5);
+    const maxAddressWidth = leftBoxWidth * 0.45;
+    const addressLines = doc.splitTextToSize(transaction.customer_address, maxAddressWidth);
     doc.text(addressLines, margin + 1.5, customerY + 8.5);
   }
 
-  const rightColX = pageWidth / 2 + 3;
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text('SALES', salesXPosition, customerY + 2.5, { align: 'right' });
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text(transaction.sales_name || '-', salesXPosition, customerY + 5.5, { align: 'right' });
+
+  const rightColX = rightBoxX + 1.5;
   doc.setFontSize(6);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
@@ -151,11 +170,11 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   doc.setFontSize(6);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('NO. FAKTUR', rightColX, customerY + 9);
+  doc.text('NO. FAKTUR', rightColX, customerY + 9.5);
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
-  doc.text(transaction.transaction_number.replace(/_/g, '/'), rightColX, customerY + 12.5);
+  doc.text(transaction.transaction_number.replace(/_/g, '/'), rightColX, customerY + 13);
 
   const tableStartY = customerY + boxHeight + 3;
 

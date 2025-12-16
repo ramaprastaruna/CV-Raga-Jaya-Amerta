@@ -128,6 +128,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
         transaction_number: transaction.transaction_number,
         customer_name: transaction.customer_name,
         customer_address: transaction.customer_address,
+        sales_name: (transaction as any).sales_name,
         transaction_date: transaction.created_at,
         payment_terms_days: (transaction as any).payment_terms_days,
         transaction_items: transaction.transaction_items,

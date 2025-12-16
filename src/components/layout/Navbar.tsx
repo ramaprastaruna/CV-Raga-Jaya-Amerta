@@ -1,11 +1,11 @@
 import React from 'react';
-import { Package, FileText, BarChart3, Users, LogOut, UserPlus } from 'lucide-react';
+import { Package, FileText, BarChart3, Users, LogOut, UserPlus, Briefcase } from 'lucide-react';
 import { signOut } from '../../lib/auth';
 import { useAuth } from '../../context/AuthContext';
 
 interface NavbarProps {
-  currentPage: 'products' | 'history' | 'reports' | 'customers' | 'users';
-  onNavigate: (page: 'products' | 'history' | 'reports' | 'customers' | 'users') => void;
+  currentPage: 'products' | 'history' | 'reports' | 'customers' | 'sales' | 'users';
+  onNavigate: (page: 'products' | 'history' | 'reports' | 'customers' | 'sales' | 'users') => void;
   onLogout: () => void;
 }
 
@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, onLogou
   const navItems = [
     { id: 'products' as const, label: 'Produk', icon: Package },
     { id: 'customers' as const, label: 'Customer', icon: Users },
+    { id: 'sales' as const, label: 'Sales', icon: Briefcase },
     { id: 'history' as const, label: 'Riwayat Nota', icon: FileText },
     { id: 'reports' as const, label: 'Laporan', icon: BarChart3 },
   ];

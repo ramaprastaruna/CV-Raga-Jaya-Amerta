@@ -7,13 +7,14 @@ import { CreateNota } from './pages/CreateNota';
 import { History } from './pages/History';
 import { Reports } from './pages/Reports';
 import { Customers } from './pages/Customers';
+import { Sales } from './pages/Sales';
 import { Users } from './pages/Users';
 import { Loading } from './components/ui/Loading';
 import { ToastContainer } from './components/ui/Toast';
 import { useToast } from './hooks/useToast';
 import { Product } from './lib/supabase';
 
-type Page = 'products' | 'history' | 'reports' | 'customers' | 'createNota' | 'users';
+type Page = 'products' | 'history' | 'reports' | 'customers' | 'sales' | 'createNota' | 'users';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -60,7 +61,7 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {currentPage !== 'createNota' && (
         <Navbar
-          currentPage={currentPage as 'products' | 'history' | 'reports' | 'customers'}
+          currentPage={currentPage as 'products' | 'history' | 'reports' | 'customers' | 'sales' | 'users'}
           onNavigate={(page) => setCurrentPage(page)}
           onLogout={() => success('Logout berhasil')}
         />
@@ -92,6 +93,10 @@ const AppContent: React.FC = () => {
 
       {currentPage === 'customers' && (
         <Customers onError={error} onSuccess={success} />
+      )}
+
+      {currentPage === 'sales' && (
+        <Sales onError={error} onSuccess={success} />
       )}
 
       {currentPage === 'users' && (

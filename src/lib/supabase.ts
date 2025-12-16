@@ -55,6 +55,8 @@ export interface Transaction {
   customer_address: string;
   total_amount: number;
   notes: string;
+  sales_id?: string;
+  sales_name?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -82,6 +84,15 @@ export interface Customer {
   name: string;
   address: string;
   payment_terms: string[];
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Sales {
+  id: string;
+  name: string;
+  phone: string;
   created_by: string;
   created_at: string;
   updated_at: string;

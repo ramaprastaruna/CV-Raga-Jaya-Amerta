@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
-import { supabase, Product, Customer } from '../lib/supabase';
+import { supabase, Product, Customer, Sales } from '../lib/supabase';
 import { Textarea } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
@@ -21,12 +21,15 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [salesList, setSalesList] = useState<Sales[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [selectedSalesId, setSelectedSalesId] = useState<string>('');
   const [selectedCustomerPaymentTerms, setSelectedCustomerPaymentTerms] = useState<string[]>([]);
   const [isCustomPaymentTerm, setIsCustomPaymentTerm] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerAddress: '',
+    salesName: '',
     notes: '',
     paymentTermsDays: '',
   });
@@ -34,6 +37,7 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
 
   useEffect(() => {
     fetchCustomers();
+    fetchSales();
     generateNextTransactionNumber();
   }, []);
 
@@ -48,6 +52,20 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
       setCustomers(data || []);
     } catch (error: any) {
       onError('Gagal memuat data customer');
+    }
+  };
+
+  const fetchSales = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setSalesList(data || []);
+    } catch (error: any) {
+      onError('Gagal memuat data sales');
     }
   };
 
@@ -72,6 +90,24 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
         customerName: '',
         customerAddress: '',
         paymentTermsDays: '',
+      });
+    }
+  };
+
+  const handleSalesSelect = (salesId: string) => {
+    setSelectedSalesId(salesId);
+    if (salesId) {
+      const sales = salesList.find(s => s.id === salesId);
+      if (sales) {
+        setFormData({
+          ...formData,
+          salesName: sales.name,
+        });
+      }
+    } else {
+      setFormData({
+        ...formData,
+        salesName: '',
       });
     }
   };
@@ -226,6 +262,8 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
           total_amount: totalAmount,
           notes: formData.notes,
           payment_terms_days: formData.paymentTermsDays || null,
+          sales_id: selectedSalesId || null,
+          sales_name: formData.salesName || null,
           created_by: user?.id,
           status: 'completed',
         })
@@ -270,6 +308,8 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
 
       if (itemsError) throw itemsError;
 
+      // STOCK DEDUCTION DISABLED - Uncomment below to enable automatic stock deduction
+      /*
       // Deduct stock only after successful transaction and items insert
       for (const item of items) {
         const { data: prod, error: prodErr } = await supabase
@@ -305,6 +345,7 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
           .eq('id', item.product.id);
         if (updErr) throw updErr;
       }
+      */
 
       onSuccess(`Nota berhasil dibuat dengan nomor ${transactionNumber}`);
       // Clear cart after successful nota creation
@@ -342,6 +383,41 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
               <p className="text-xs text-gray-500 mb-1">Nomor Transaksi</p>
               <p className="text-lg font-semibold text-black">{generatedTransactionNumber || 'Memuat...'}</p>
             </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-semibold text-black">Informasi Sales</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Pilih Sales
+              </label>
+              <select
+                value={selectedSalesId}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSalesSelect(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              >
+                <option value="">-- Pilih Sales --</option>
+                {salesList.map((sales) => (
+                  <option key={sales.id} value={sales.id}>
+                    {sales.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedSalesId && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
+                <div>
+                  <p className="text-xs text-gray-500">Nama Sales</p>
+                  <p className="font-medium text-black">{formData.salesName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">No. HP</p>
+                  <p className="text-sm text-gray-700">
+                    {salesList.find(s => s.id === selectedSalesId)?.phone || '-'}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
