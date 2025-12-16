@@ -22,6 +22,8 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [selectedCustomerPaymentTerms, setSelectedCustomerPaymentTerms] = useState<string[]>([]);
+  const [isCustomPaymentTerm, setIsCustomPaymentTerm] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerAddress: '',
@@ -51,15 +53,36 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
 
   const handleCustomerSelect = (customerId: string) => {
     setSelectedCustomerId(customerId);
+    setIsCustomPaymentTerm(false); // Reset custom payment term flag
     if (customerId) {
       const customer = customers.find(c => c.id === customerId);
       if (customer) {
+        setSelectedCustomerPaymentTerms(customer.payment_terms || []);
         setFormData({
           ...formData,
           customerName: customer.name,
           customerAddress: customer.address,
+          paymentTermsDays: '', // Reset payment term when changing customer
         });
       }
+    } else {
+      setSelectedCustomerPaymentTerms([]);
+      setFormData({
+        ...formData,
+        customerName: '',
+        customerAddress: '',
+        paymentTermsDays: '',
+      });
+    }
+  };
+
+  const handlePaymentTermChange = (value: string) => {
+    if (value === '__custom__') {
+      setIsCustomPaymentTerm(true);
+      setFormData({ ...formData, paymentTermsDays: '' });
+    } else {
+      setIsCustomPaymentTerm(false);
+      setFormData({ ...formData, paymentTermsDays: value });
     }
   };
 
@@ -451,12 +474,48 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Term of Payment
               </label>
-              <input
-                type="text"
-                value={formData.paymentTermsDays}
-                onChange={(e) => setFormData({ ...formData, paymentTermsDays: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              />
+              {selectedCustomerId && selectedCustomerPaymentTerms.length > 0 ? (
+                <div className="space-y-2">
+                  <select
+                    value={isCustomPaymentTerm ? '__custom__' : formData.paymentTermsDays}
+                    onChange={(e) => handlePaymentTermChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  >
+                    <option value="">-- Pilih Term of Payment --</option>
+                    {selectedCustomerPaymentTerms.map((term, index) => (
+                      <option key={index} value={term}>
+                        {term}
+                      </option>
+                    ))}
+                    <option value="__custom__">Custom (Ketik Manual)</option>
+                  </select>
+                  {isCustomPaymentTerm && (
+                    <input
+                      type="text"
+                      value={formData.paymentTermsDays}
+                      placeholder="Ketik term of payment custom"
+                      onChange={(e) => setFormData({ ...formData, paymentTermsDays: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      autoFocus
+                    />
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="text"
+                    value={formData.paymentTermsDays}
+                    onChange={(e) => setFormData({ ...formData, paymentTermsDays: e.target.value })}
+                    placeholder="Contoh: Cash, NET 30, NET 60"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                  {selectedCustomerId && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Customer ini belum memiliki term of payment. Silakan ketik manual atau tambahkan di halaman Customer.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

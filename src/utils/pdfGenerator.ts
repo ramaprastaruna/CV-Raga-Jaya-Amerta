@@ -63,7 +63,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   }
 
   const drawHeader = () => {
-    doc.setFillColor(248, 248, 248);
+    doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageWidth, 26, 'F');
 
     let textStartX = margin;
@@ -112,7 +112,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   const customerY = 30;
   const boxHeight = 15;
 
-  doc.setFillColor(252, 252, 252);
+  doc.setFillColor(255, 255, 255);
   doc.rect(margin, customerY, (pageWidth - 2 * margin) / 2 - 2, boxHeight, 'F');
   doc.rect(pageWidth / 2 + 2, customerY, (pageWidth - 2 * margin) / 2 - 2, boxHeight, 'F');
 
@@ -212,7 +212,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
       textColor: [30, 30, 30],
     },
     headStyles: {
-      fillColor: [245, 245, 245],
+      fillColor: [255, 255, 255],
       textColor: [0, 0, 0],
       lineWidth: 0.25,
       lineColor: [190, 190, 190],
@@ -222,6 +222,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
       fontSize: 6.5,
     },
     bodyStyles: {
+      fillColor: [255, 255, 255],
       lineWidth: 0.15,
       lineColor: [230, 230, 230],
       textColor: [30, 30, 30],
@@ -229,7 +230,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
       fontSize: 6.5,
     },
     footStyles: {
-      fillColor: [248, 248, 248],
+      fillColor: [255, 255, 255],
       textColor: [0, 0, 0],
       fontStyle: 'bold',
       lineWidth: 0.25,
@@ -269,7 +270,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   const rightColStart = leftColWidth + 2;
   const paymentBoxHeight = transaction.payment_terms_days ? 18 : 14;
 
-  doc.setFillColor(252, 252, 252);
+  doc.setFillColor(255, 255, 255);
   doc.rect(margin, finalY, leftColWidth - margin - 1.5, paymentBoxHeight, 'F');
   doc.setDrawColor(210, 210, 210);
   doc.setLineWidth(0.25);
@@ -285,7 +286,27 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
     doc.setFontSize(6.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(30, 30, 30);
-    doc.text(transaction.payment_terms_days, margin + 1.5, leftY + 3.5);
+
+    const termText = transaction.payment_terms_days;
+    const daysMatch = termText.match(/(\d+)\s*(hari|Hari|HARI|day|Day|DAY)/i);
+
+    let displayText = termText;
+    if (daysMatch) {
+      const days = parseInt(daysMatch[1]);
+      const transactionDate = new Date(transaction.transaction_date);
+      const dueDate = new Date(transactionDate);
+      dueDate.setDate(dueDate.getDate() + days);
+
+      const dueDateFormatted = dueDate.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+
+      displayText = `${termText} (${dueDateFormatted})`;
+    }
+
+    doc.text(displayText, margin + 1.5, leftY + 3.5);
     leftY += 7;
   }
 
@@ -311,7 +332,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   const grandTotalBoxW = pageWidth - grandTotalBoxX - margin;
   const grandTotalBoxH = paymentBoxHeight;
 
-  doc.setFillColor(252, 252, 252);
+  doc.setFillColor(255, 255, 255);
   doc.rect(grandTotalBoxX, grandTotalBoxY, grandTotalBoxW, grandTotalBoxH, 'F');
   doc.setDrawColor(210, 210, 210);
   doc.setLineWidth(0.25);

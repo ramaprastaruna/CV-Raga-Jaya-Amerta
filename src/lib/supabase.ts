@@ -81,6 +81,7 @@ export interface Customer {
   id: string;
   name: string;
   address: string;
+  payment_terms: string[];
   created_by: string;
   created_at: string;
   updated_at: string;

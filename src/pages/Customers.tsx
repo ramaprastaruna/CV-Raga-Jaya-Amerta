@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, User } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, User, X } from 'lucide-react';
 import { supabase, Customer } from '../lib/supabase';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -28,7 +28,10 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
+    payment_terms: [] as string[],
   });
+
+  const [newPaymentTerm, setNewPaymentTerm] = useState('');
 
   useEffect(() => {
     fetchCustomers();
@@ -68,6 +71,23 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
     setFilteredCustomers(filtered);
   };
 
+  const addPaymentTerm = () => {
+    if (newPaymentTerm.trim()) {
+      setFormData({
+        ...formData,
+        payment_terms: [...formData.payment_terms, newPaymentTerm.trim()],
+      });
+      setNewPaymentTerm('');
+    }
+  };
+
+  const removePaymentTerm = (index: number) => {
+    setFormData({
+      ...formData,
+      payment_terms: formData.payment_terms.filter((_, i) => i !== index),
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -88,6 +108,7 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
           .update({
             name: formData.name,
             address: formData.address,
+            payment_terms: formData.payment_terms,
             updated_at: new Date().toISOString(),
           })
           .eq('id', editingCustomer.id);
@@ -98,6 +119,7 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
         const { error } = await supabase.from('customers').insert({
           name: formData.name,
           address: formData.address,
+          payment_terms: formData.payment_terms,
           created_by: user?.id,
         });
 
@@ -139,14 +161,17 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
       setFormData({
         name: customer.name,
         address: customer.address,
+        payment_terms: customer.payment_terms || [],
       });
     } else {
       setEditingCustomer(null);
       setFormData({
         name: '',
         address: '',
+        payment_terms: [],
       });
     }
+    setNewPaymentTerm('');
     setIsModalOpen(true);
   };
 
@@ -194,13 +219,14 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
             <tr>
               <th className="px-6 py-3 text-left text-sm font-semibold text-black">Nama</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-black">Alamat</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-black">Term of Payment</th>
               <th className="px-6 py-3 text-right text-sm font-semibold text-black"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {filteredCustomers.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-gray-600">
+                <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
                   {searchQuery ? 'Tidak ada customer ditemukan' : 'Belum ada customer'}
                 </td>
               </tr>
@@ -212,6 +238,22 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {customer.address || '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {customer.payment_terms && customer.payment_terms.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {customer.payment_terms.map((term, index) => (
+                          <span
+                            key={index}
+                            className="inline-block px-2 py-0.5 bg-black text-white rounded text-xs font-medium"
+                          >
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
@@ -264,6 +306,57 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
               rows={3}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Term of Payment
+            </label>
+            <div className="space-y-2">
+              {formData.payment_terms.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {formData.payment_terms.map((term, index) => (
+                    <div
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-black text-white rounded text-xs font-medium"
+                    >
+                      <span>{term}</span>
+                      <button
+                        type="button"
+                        onClick={() => removePaymentTerm(index)}
+                        className="hover:text-gray-300 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newPaymentTerm}
+                  onChange={(e) => setNewPaymentTerm(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addPaymentTerm();
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <Button
+                  type="button"
+                  onClick={addPaymentTerm}
+                  variant="secondary"
+                  className="whitespace-nowrap px-3 py-2 text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Tambah
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2 pt-4">
