@@ -197,11 +197,11 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
             Semua
           </Button>
           <Button
-            onClick={() => setTimePeriod('today')}
-            variant={timePeriod === 'today' ? 'primary' : 'secondary'}
+            onClick={() => setTimePeriod('year')}
+            variant={timePeriod === 'year' ? 'primary' : 'secondary'}
             className="text-sm"
           >
-            Hari Ini
+            Tahun Ini
           </Button>
           <Button
             onClick={() => setTimePeriod('month')}
@@ -211,22 +211,24 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
             Bulan Ini
           </Button>
           <Button
-            onClick={() => setTimePeriod('year')}
-            variant={timePeriod === 'year' ? 'primary' : 'secondary'}
+            onClick={() => setTimePeriod('today')}
+            variant={timePeriod === 'today' ? 'primary' : 'secondary'}
             className="text-sm"
           >
-            Tahun Ini
+            Hari Ini
           </Button>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
-            aria-label="Pilih Bulan"
-          >
-            {monthNames.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
-            ))}
-          </select>
+          {(timePeriod === 'all' || timePeriod === 'year') && (
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+              aria-label="Pilih Bulan"
+            >
+              {monthNames.map((m, idx) => (
+                <option key={m} value={idx}>{m}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -253,6 +255,9 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                   Pelanggan
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-black">
+                  Sales
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-black">
                   Tanggal
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-black">
@@ -271,6 +276,9 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {transaction.customer_name}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {(transaction as any).sales_name || '-'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
@@ -365,6 +373,15 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                 <p className="text-sm text-gray-600">Alamat</p>
                 <p className="font-medium text-black">
                   {selectedTransaction.customer_address}
+                </p>
+              </div>
+            )}
+
+            {(selectedTransaction as any).sales_name && (
+              <div>
+                <p className="text-sm text-gray-600">Sales</p>
+                <p className="font-medium text-black">
+                  {(selectedTransaction as any).sales_name}
                 </p>
               </div>
             )}

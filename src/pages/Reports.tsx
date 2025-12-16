@@ -158,7 +158,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h2 className="text-2xl font-bold text-black">Laporan Penjualan</h2>
         <div className="flex gap-2 items-center">
-          {(['all', 'day', 'month', 'year'] as const).map((p) => (
+          {(['all', 'year', 'month', 'day'] as const).map((p) => (
             <Button
               key={p}
               onClick={() => setPeriod(p)}
@@ -168,16 +168,18 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
               {periodLabels[p]}
             </Button>
           ))}
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
-            aria-label="Pilih Bulan"
-          >
-            {monthNames.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
-            ))}
-          </select>
+          {(period === 'all' || period === 'year') && (
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+              aria-label="Pilih Bulan"
+            >
+              {monthNames.map((m, idx) => (
+                <option key={m} value={idx}>{m}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
