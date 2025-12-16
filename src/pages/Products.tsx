@@ -348,15 +348,9 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
   };
 
   const removeStock = (index: number) => {
-    const stockToRemove = formData.stockEntries[index];
-    const updatedUnits = formData.units.filter(
-      (unit) => unit.name.toLowerCase() !== stockToRemove.unit.toLowerCase()
-    );
-
     setFormData({
       ...formData,
       stockEntries: formData.stockEntries.filter((_, i) => i !== index),
-      units: updatedUnits,
     });
   };
 
