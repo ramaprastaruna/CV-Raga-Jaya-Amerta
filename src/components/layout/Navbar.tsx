@@ -18,7 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, onLogou
     onLogout();
   };
 
-  const navItems = [
+  const navItems: Array<{ id: 'products' | 'history' | 'reports' | 'customers' | 'sales' | 'users'; label: string; icon: any }> = [
     { id: 'products' as const, label: 'Produk', icon: Package },
     { id: 'customers' as const, label: 'Customer', icon: Users },
     { id: 'sales' as const, label: 'Sales', icon: Briefcase },

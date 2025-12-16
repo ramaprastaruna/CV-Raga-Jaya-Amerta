@@ -63,11 +63,6 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
     isExact: true,
   });
 
-  const [newUnit, setNewUnit] = useState({
-    name: '',
-    quantity: '',
-  });
-
   const [newStock, setNewStock] = useState({
     unit: '',
     quantity: '',
@@ -315,41 +310,6 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
       discountTiers: formData.discountTiers.filter(
         (tier) => !(tier.minQuantity === minQuantity && tier.unit === unit && tier.isExact === isExact)
       ),
-    });
-  };
-
-  const addUnit = () => {
-    const unitName = newUnit.name.trim();
-    const unitQty = parseInt(newUnit.quantity);
-
-    if (!unitName) {
-      onError('Nama unit harus diisi');
-      return;
-    }
-
-    if (!unitQty || unitQty < 1) {
-      onError('Jumlah per unit harus lebih dari 0');
-      return;
-    }
-
-    const exists = formData.units.some((u) => u.name.toLowerCase() === unitName.toLowerCase());
-    if (exists) {
-      onError('Unit sudah ada');
-      return;
-    }
-
-    setFormData({
-      ...formData,
-      units: [...formData.units, { name: unitName, quantity: unitQty }],
-    });
-
-    setNewUnit({ name: '', quantity: '' });
-  };
-
-  const removeUnit = (index: number) => {
-    setFormData({
-      ...formData,
-      units: formData.units.filter((_, i) => i !== index),
     });
   };
 

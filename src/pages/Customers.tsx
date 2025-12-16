@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, User, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X } from 'lucide-react';
 import { supabase, Customer } from '../lib/supabase';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -338,7 +338,7 @@ export const Customers: React.FC<CustomersProps> = ({ onError, onSuccess }) => {
                   type="text"
                   value={newPaymentTerm}
                   onChange={(e) => setNewPaymentTerm(e.target.value)}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       addPaymentTerm();

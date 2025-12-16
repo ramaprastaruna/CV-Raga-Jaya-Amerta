@@ -18,7 +18,7 @@ interface SalesData {
 export const Reports: React.FC<ReportsProps> = ({ onError }) => {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'all' | 'day' | 'month' | 'year'>('all');
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedMonth, setSelectedMonth] = useState<number>(-1);
   const [salesData, setSalesData] = useState<SalesData>({
     totalRevenue: 0,
     totalTransactions: 0,
@@ -48,25 +48,29 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
 
   const getDateRange = () => {
     const now = new Date();
+    const currentMonth = now.getMonth();
     let startDate = new Date();
     let endDate = new Date(now);
 
-    if (period === 'all') {
-      startDate = new Date(0);
-    } else {
-      switch (period) {
-        case 'day':
-          startDate.setHours(0, 0, 0, 0);
-          break;
-        case 'month':
-          startDate = new Date(now.getFullYear(), selectedMonth, 1);
-          endDate = new Date(now.getFullYear(), selectedMonth + 1, 1);
-          break;
-        case 'year':
-          startDate.setMonth(0, 1);
-          startDate.setHours(0, 0, 0, 0);
-          break;
-      }
+    switch (period) {
+      case 'all':
+        // For 'all', get all data then filter by selected month
+        startDate = new Date(0); // Start from epoch
+        endDate = new Date(now.getFullYear() + 1, 0, 1); // End next year
+        break;
+      case 'day':
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        // Gunakan bulan saat ini, BUKAN selectedMonth
+        startDate = new Date(now.getFullYear(), currentMonth, 1);
+        endDate = new Date(now.getFullYear(), currentMonth + 1, 1);
+        break;
+      case 'year':
+        // For 'year', get all data from current year then filter by selected month
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 0, 1);
+        break;
     }
 
     return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
@@ -76,13 +80,22 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     try {
       const { startDate, endDate } = getDateRange();
 
-      const { data: transactions, error: transError } = await supabase
+      let { data: transactions, error: transError } = await supabase
         .from('transactions')
         .select('*, transaction_items(*)')
         .gte('created_at', startDate)
         .lte('created_at', endDate);
 
       if (transError) throw transError;
+
+      // Filter by selected month for 'all' and 'year' periods
+      // Jika selectedMonth = -1 (Semua Bulan), tidak filter berdasarkan bulan
+      if ((period === 'all' || period === 'year') && selectedMonth !== -1) {
+        transactions = transactions?.filter((t) => {
+          const created = new Date(t.created_at);
+          return created.getMonth() === selectedMonth;
+        }) || [];
+      }
 
       const totalRevenue = transactions?.reduce((sum, t) => sum + t.total_amount, 0) || 0;
       const totalTransactions = transactions?.length || 0;
@@ -157,7 +170,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h2 className="text-2xl font-bold text-black">Laporan Penjualan</h2>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           {(['all', 'year', 'month', 'day'] as const).map((p) => (
             <Button
               key={p}
@@ -172,9 +185,10 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
               aria-label="Pilih Bulan"
             >
+              <option value={-1}>Semua Bulan</option>
               {monthNames.map((m, idx) => (
                 <option key={m} value={idx}>{m}</option>
               ))}

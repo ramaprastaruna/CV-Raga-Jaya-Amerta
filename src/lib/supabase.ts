@@ -54,6 +54,7 @@ export interface Transaction {
   customer_phone: string;
   customer_address: string;
   total_amount: number;
+  grand_total?: number;
   notes: string;
   sales_id?: string;
   sales_name?: string;
@@ -70,7 +71,10 @@ export interface TransactionItem {
   product_id: string;
   product_name: string;
   quantity: number;
+  unit: string;
   unit_price: number;
+  discount_amount?: number;
+  discount_percent?: number;
   subtotal: number;
   created_at: string;
 }

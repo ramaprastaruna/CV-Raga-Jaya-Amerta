@@ -18,7 +18,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithItems | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [timePeriod, setTimePeriod] = useState<'all' | 'today' | 'month' | 'year'>('all');
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedMonth, setSelectedMonth] = useState<number>(-1);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; transactionId: string | null; transactionNumber: string }>({ isOpen: false, transactionId: null, transactionNumber: '' });
 
   const monthNames = [
@@ -71,19 +71,38 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfSelectedMonth = new Date(now.getFullYear(), selectedMonth, 1);
-    const startOfNextMonth = new Date(now.getFullYear(), selectedMonth + 1, 1);
+    const currentMonth = now.getMonth();
+    const startOfCurrentMonth = new Date(now.getFullYear(), currentMonth, 1);
+    const startOfNextCurrentMonth = new Date(now.getFullYear(), currentMonth + 1, 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
 
     if (timePeriod === 'today') {
       filtered = filtered.filter((t) => new Date(t.created_at) >= today);
     } else if (timePeriod === 'month') {
+      // Gunakan bulan saat ini, BUKAN selectedMonth
       filtered = filtered.filter((t) => {
         const created = new Date(t.created_at);
-        return created >= startOfSelectedMonth && created < startOfNextMonth;
+        return created >= startOfCurrentMonth && created < startOfNextCurrentMonth;
       });
     } else if (timePeriod === 'year') {
-      filtered = filtered.filter((t) => new Date(t.created_at) >= startOfYear);
+      // Gunakan selectedMonth dari dropdown
+      filtered = filtered.filter((t) => {
+        const created = new Date(t.created_at);
+        // Jika selectedMonth = -1 (Semua Bulan), hanya filter tahun ini
+        if (selectedMonth === -1) {
+          return created >= startOfYear;
+        }
+        return created >= startOfYear && created.getMonth() === selectedMonth;
+      });
+    } else if (timePeriod === 'all') {
+      // Gunakan selectedMonth dari dropdown
+      // Jika selectedMonth = -1 (Semua Bulan), tampilkan semua
+      if (selectedMonth !== -1) {
+        filtered = filtered.filter((t) => {
+          const created = new Date(t.created_at);
+          return created.getMonth() === selectedMonth;
+        });
+      }
     }
 
     if (searchQuery) {
@@ -142,38 +161,6 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
     }
   };
 
-  const loadJsPDF = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // @ts-ignore
-      if (window.jspdf) {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load jsPDF'));
-      document.head.appendChild(script);
-    });
-  };
-
-  const loadAutoTable = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // @ts-ignore
-      if (window.jspdf && window.jspdf.jsPDF.prototype.autoTable) {
-        resolve();
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load autoTable'));
-      document.head.appendChild(script);
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -188,7 +175,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
         <div>
           <h2 className="text-2xl font-bold text-black">Nota</h2>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <Button
             onClick={() => setTimePeriod('all')}
             variant={timePeriod === 'all' ? 'primary' : 'secondary'}
@@ -221,9 +208,10 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="border border-gray-300 rounded-lg px-2 py-2 text-sm bg-white"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
               aria-label="Pilih Bulan"
             >
+              <option value={-1}>Semua Bulan</option>
               {monthNames.map((m, idx) => (
                 <option key={m} value={idx}>{m}</option>
               ))}

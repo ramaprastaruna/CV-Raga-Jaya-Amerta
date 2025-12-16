@@ -6,8 +6,8 @@ interface TransactionItem {
   quantity: number;
   unit: string;
   unit_price: number;
-  discount_amount: number;
-  discount_percent: number;
+  discount_amount?: number;
+  discount_percent?: number;
   discount_details?: { discount1: number; discount2: number } | null;
   subtotal: number;
 }
@@ -188,7 +188,6 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
     const nameWithoutUnit = productName.replace(/\s*\([^)]+\)$/, '');
 
     const discountPercent = Number(item.discount_percent || 0);
-    const discountAmountPerUnit = Number(item.discount_amount || 0);
     const unitPriceAfterDiscount = Number(item.unit_price || 0);
     const subtotal = Number(item.subtotal || 0);
 
