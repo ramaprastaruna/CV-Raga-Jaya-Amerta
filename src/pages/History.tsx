@@ -186,7 +186,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-black">Riwayat Nota</h2>
+          <h2 className="text-2xl font-bold text-black">Nota</h2>
         </div>
         <div className="flex gap-2 items-center">
           <Button

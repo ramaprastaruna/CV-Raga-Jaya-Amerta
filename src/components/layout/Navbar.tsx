@@ -22,7 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, onLogou
     { id: 'products' as const, label: 'Produk', icon: Package },
     { id: 'customers' as const, label: 'Customer', icon: Users },
     { id: 'sales' as const, label: 'Sales', icon: Briefcase },
-    { id: 'history' as const, label: 'Riwayat Nota', icon: FileText },
+    { id: 'history' as const, label: 'Nota', icon: FileText },
     { id: 'reports' as const, label: 'Laporan', icon: BarChart3 },
   ];
 
