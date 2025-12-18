@@ -188,18 +188,21 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
     const nameWithoutUnit = productName.replace(/\s*\([^)]+\)$/, '');
 
     const discountPercent = Number(item.discount_percent || 0);
+    const discountAmount = Number(item.discount_amount || 0);
     const unitPriceAfterDiscount = Number(item.unit_price || 0);
     const subtotal = Number(item.subtotal || 0);
 
+    // Get discount breakdown text (percentage only)
     let discountDisplay = '-';
-    if (item.discount_details && (item.discount_details.discount1 > 0 || item.discount_details.discount2 > 0)) {
-      if (item.discount_details.discount2 > 0) {
-        discountDisplay = `${item.discount_details.discount1}% + ${item.discount_details.discount2}%`;
-      } else {
-        discountDisplay = `${item.discount_details.discount1}%`;
+    if (item.discount_details) {
+      const details = item.discount_details;
+      if (details.discount2 && details.discount2 > 0) {
+        discountDisplay = `${details.discount1}% + ${details.discount2}%`;
+      } else if (details.discount1 && details.discount1 > 0) {
+        discountDisplay = `${details.discount1}%`;
       }
     } else if (discountPercent > 0) {
-      discountDisplay = `${discountPercent.toFixed(0)}%`;
+      discountDisplay = `${discountPercent.toFixed(1)}%`;
     }
 
     return [

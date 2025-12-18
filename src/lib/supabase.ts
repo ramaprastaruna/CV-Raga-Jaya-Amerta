@@ -56,6 +56,7 @@ export interface Transaction {
   total_amount: number;
   grand_total?: number;
   notes: string;
+  payment_terms_days?: string;
   sales_id?: string;
   sales_name?: string;
   created_by: string;
@@ -75,6 +76,10 @@ export interface TransactionItem {
   unit_price: number;
   discount_amount?: number;
   discount_percent?: number;
+  discount_details?: {
+    discount1: number;
+    discount2: number;
+  };
   subtotal: number;
   created_at: string;
 }

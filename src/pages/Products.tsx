@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, ShoppingCart, Minus } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ShoppingCart, Minus, X } from 'lucide-react';
 import { supabase, Product, DiscountTier, ProductUnit, StockEntry } from '../lib/supabase';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -529,8 +529,16 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
             placeholder="Cari produk atau SKU"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
         <select
           value={selectedCategory}
@@ -644,6 +652,11 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
         maxWidth="max-w-4xl"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
+          {(() => {
+            const isBasicInfoComplete = !!(formData.name && formData.category && formData.sku && formData.purchasePrice && formData.basePrice);
+            const hasStockEntries = formData.stockEntries.length > 0;
+
+            return (
           <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="font-semibold text-black text-sm uppercase tracking-wider">
@@ -675,7 +688,6 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                   type="number"
                   value={formData.purchasePrice}
                   onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-                  placeholder="Harga dari supplier"
                   required
                 />
                 <Input
@@ -698,12 +710,14 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                     label={<span>Unit Stok <span className="text-red-500">*</span></span>}
                     value={newStock.unit}
                     onChange={(e) => setNewStock({ ...newStock, unit: e.target.value })}
+                    disabled={!isBasicInfoComplete}
                   />
                   <Input
                     label={<span>Jumlah Stok <span className="text-red-500">*</span></span>}
                     type="number"
                     value={newStock.quantity}
                     onChange={(e) => setNewStock({ ...newStock, quantity: e.target.value })}
+                    disabled={!isBasicInfoComplete}
                   />
                 </div>
                 <Button
@@ -711,6 +725,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                   onClick={addStock}
                   variant="secondary"
                   className="w-full"
+                  disabled={!isBasicInfoComplete}
                 >
                   <Plus className="w-4 h-4" />
                   Tambah Stok
@@ -761,12 +776,12 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
               </h3>
 
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Unit
                     </label>
-                    {formData.stockEntries.length > 0 ? (
+                    {hasStockEntries ? (
                       <select
                         value={newTier.unit}
                         onChange={(e) =>
@@ -775,7 +790,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                             unit: e.target.value as 'buah' | 'box' | 'karton',
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       >
                         <option value="">Pilih Unit</option>
                         {formData.stockEntries.map((stock, index) => (
@@ -785,19 +800,23 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                         ))}
                       </select>
                     ) : (
-                      <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-400 text-sm">
+                      <div className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-400 text-sm">
                         Tambahkan stok terlebih dahulu
                       </div>
                     )}
                   </div>
-                  <div>
-                    <Input
-                      label="Qty"
+                  <div className="w-32">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Qty
+                    </label>
+                    <input
                       type="number"
                       value={newTier.minQuantity}
                       onChange={(e) =>
                         setNewTier({ ...newTier, minQuantity: e.target.value })
                       }
+                      disabled={!hasStockEntries}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
                     />
                   </div>
                 </div>
@@ -810,6 +829,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                       checked={newTier.isExact}
                       onChange={() => setNewTier({ ...newTier, isExact: true })}
                       className="w-4 h-4 text-black focus:ring-black"
+                      disabled={!hasStockEntries}
                     />
                     <span className="text-sm text-gray-700">Spesifik (=)</span>
                   </label>
@@ -820,6 +840,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                       checked={!newTier.isExact}
                       onChange={() => setNewTier({ ...newTier, isExact: false })}
                       className="w-4 h-4 text-black focus:ring-black"
+                      disabled={!hasStockEntries}
                     />
                     <span className="text-sm text-gray-700">Minimal (≥)</span>
                   </label>
@@ -834,6 +855,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                     }
                     min="0"
                     max="100"
+                    disabled={!hasStockEntries}
                   />
                   <Input
                     label="Diskon 2 (%)"
@@ -844,6 +866,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                     }
                     min="0"
                     max="100"
+                    disabled={!hasStockEntries}
                   />
                 </div>
                 <Button
@@ -851,6 +874,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                   onClick={addDiscountTier}
                   variant="secondary"
                   className="w-full"
+                  disabled={!hasStockEntries}
                 >
                   <Plus className="w-4 h-4" />
                   Tambah
@@ -891,19 +915,21 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="font-semibold text-black text-sm uppercase tracking-wider mb-4">
-              Preview Perhitungan Harga
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <DiscountCalculator
-                basePrice={parseFloat(formData.basePrice) || 0}
-                discountTiers={formData.discountTiers}
-              />
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="font-semibold text-black text-sm uppercase tracking-wider mb-4">
+                Preview Perhitungan Harga
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <DiscountCalculator
+                  basePrice={parseFloat(formData.basePrice) || 0}
+                  discountTiers={formData.discountTiers}
+                />
+              </div>
             </div>
           </div>
+            );
+          })()}
 
           <div className="flex gap-2 pt-4 border-t border-gray-200">
             <Button type="submit" className="flex-1">

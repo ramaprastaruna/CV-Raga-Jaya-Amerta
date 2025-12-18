@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Calendar, Download } from 'lucide-react';
+import { Search, Eye, Trash2, Calendar, Download, Edit2, CheckCircle, X } from 'lucide-react';
 import { supabase, TransactionWithItems } from '../lib/supabase';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
+import { EditNotaModal } from '../components/nota/EditNotaModal';
 
 interface HistoryProps {
   onError: (message: string) => void;
@@ -17,9 +18,13 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithItems | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'draft' | 'final'>('draft');
   const [timePeriod, setTimePeriod] = useState<'all' | 'today' | 'month' | 'year'>('all');
   const [selectedMonth, setSelectedMonth] = useState<number>(-1);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; transactionId: string | null; transactionNumber: string }>({ isOpen: false, transactionId: null, transactionNumber: '' });
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<TransactionWithItems | null>(null);
+  const [finalizeConfirmModal, setFinalizeConfirmModal] = useState<{ isOpen: boolean; transactionId: string | null; transactionNumber: string }>({ isOpen: false, transactionId: null, transactionNumber: '' });
 
   const monthNames = [
     'Januari',
@@ -42,7 +47,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
   useEffect(() => {
     filterTransactions();
-  }, [searchQuery, transactions, timePeriod, selectedMonth]);
+  }, [searchQuery, transactions, timePeriod, selectedMonth, activeTab]);
 
   const fetchTransactions = async () => {
     try {
@@ -68,6 +73,13 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
   const filterTransactions = () => {
     let filtered = transactions;
+
+    // Filter by status based on active tab
+    if (activeTab === 'draft') {
+      filtered = filtered.filter(t => t.status === 'pending');
+    } else {
+      filtered = filtered.filter(t => t.status === 'completed');
+    }
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -136,6 +148,32 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
     setDeleteConfirmModal({ isOpen: true, transactionId: transaction.id, transactionNumber: transaction.transaction_number });
   };
 
+  const handleEdit = (transaction: TransactionWithItems) => {
+    setEditingTransaction(transaction);
+    setEditModalOpen(true);
+  };
+
+  const openFinalizeConfirm = (transaction: TransactionWithItems) => {
+    setFinalizeConfirmModal({ isOpen: true, transactionId: transaction.id, transactionNumber: transaction.transaction_number });
+  };
+
+  const handleFinalize = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      onSuccess('Nota berhasil difinalisasi');
+      fetchTransactions();
+      setFinalizeConfirmModal({ isOpen: false, transactionId: null, transactionNumber: '' });
+    } catch (error: any) {
+      onError('Gagal memfinalisasi nota');
+      setFinalizeConfirmModal({ isOpen: false, transactionId: null, transactionNumber: '' });
+    }
+  };
+
   const viewDetails = (transaction: TransactionWithItems) => {
     setSelectedTransaction(transaction);
     setIsDetailModalOpen(true);
@@ -176,6 +214,21 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
           <h2 className="text-2xl font-bold text-black">Nota</h2>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
+          <Button
+            onClick={() => setActiveTab('draft')}
+            variant={activeTab === 'draft' ? 'primary' : 'secondary'}
+            className="text-sm"
+          >
+            Draft ({transactions.filter(t => t.status === 'pending').length})
+          </Button>
+          <Button
+            onClick={() => setActiveTab('final')}
+            variant={activeTab === 'final' ? 'primary' : 'secondary'}
+            className="text-sm"
+          >
+            Final ({transactions.filter(t => t.status === 'completed').length})
+          </Button>
+          <div className="w-px h-6 bg-gray-300"></div>
           <Button
             onClick={() => setTimePeriod('all')}
             variant={timePeriod === 'all' ? 'primary' : 'secondary'}
@@ -227,8 +280,16 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
           placeholder="Cari nomor transaksi atau nama pelanggan"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
         />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -283,13 +344,35 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                         variant="ghost"
                         onClick={() => viewDetails(transaction)}
                         className="p-2"
+                        title="Lihat Detail"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
+                      {transaction.status === 'pending' && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleEdit(transaction)}
+                            className="p-2 text-blue-600 hover:bg-blue-50"
+                            title="Edit Nota"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => openFinalizeConfirm(transaction)}
+                            className="p-2 text-green-600 hover:bg-green-50"
+                            title="Finalisasi Nota"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                       <Button
                         variant="ghost"
                         onClick={() => exportToPDF(transaction)}
                         className="p-2"
+                        title="Download PDF"
                       >
                         <Download className="w-4 h-4" />
                       </Button>
@@ -297,6 +380,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                         variant="ghost"
                         onClick={() => openDeleteConfirm(transaction)}
                         className="p-2 text-red-600 hover:bg-red-50"
+                        title="Hapus Nota"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -311,7 +395,16 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
       {filteredTransactions.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-600">Tidak ada transaksi ditemukan</p>
+          <p className="text-gray-600">
+            {activeTab === 'draft'
+              ? 'Tidak ada nota draft'
+              : 'Tidak ada nota final'}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            {activeTab === 'draft'
+              ? 'Buat nota baru dari menu Buat Nota'
+              : 'Finalisasi nota draft untuk menampilkannya disini'}
+          </p>
         </div>
       )}
 
@@ -398,13 +491,13 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                       <th className="px-3 py-2 text-center text-xs font-semibold text-black">
                         Satuan
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-black">
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-black w-40">
                         Harga/Unit
                       </th>
                       <th className="px-3 py-2 text-right text-xs font-semibold text-black">
                         Diskon
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-black">
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-black w-40">
                         Subtotal
                       </th>
                     </tr>
@@ -427,6 +520,20 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                       const unitPrice = Number(item.unit_price || 0);
                       const subtotal = Number(item.subtotal || 0);
 
+                      // Get discount breakdown text
+                      let discountBreakdown = '';
+                      if (item.discount_details) {
+                        const details = item.discount_details;
+                        if (details.discount2 && details.discount2 > 0) {
+                          discountBreakdown = `${details.discount1}% + ${details.discount2}%`;
+                        } else if (details.discount1 && details.discount1 > 0) {
+                          discountBreakdown = `${details.discount1}%`;
+                        }
+                      }
+                      if (!discountBreakdown && discountPercent > 0) {
+                        discountBreakdown = `${discountPercent.toFixed(1)}%`;
+                      }
+
                       return (
                         <tr key={item.id}>
                           <td className="px-3 py-2 text-sm text-black">
@@ -441,13 +548,8 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                           <td className="px-3 py-2 text-sm text-right text-gray-600">
                             Rp {(Math.round(unitPrice * 100) / 100).toLocaleString('id-ID')}
                           </td>
-                          <td className="px-3 py-2 text-sm text-right text-gray-600">
-                            {discountAmount > 0 ? (
-                              <div>
-                                <div>Rp {(Math.round(discountAmount * 100) / 100).toLocaleString('id-ID')}</div>
-                                <div className="text-xs text-gray-500">({discountPercent.toFixed(2)}%)</div>
-                              </div>
-                            ) : '-'}
+                          <td className="px-3 py-2 text-sm text-center text-gray-600">
+                            {discountBreakdown || '-'}
                           </td>
                           <td className="px-3 py-2 text-sm text-right font-medium text-black">
                             Rp {(Math.round(subtotal * 100) / 100).toLocaleString('id-ID')}
@@ -512,23 +614,110 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
               </div>
             )}
 
-            <Button
-              onClick={() => exportToPDF(selectedTransaction)}
-              className="w-full"
-            >
-              <Download className="w-4 h-4" />
-              Download PDF
-            </Button>
+            <div className="flex gap-2">
+              {selectedTransaction.status === 'pending' && (
+                <>
+                  <Button
+                    onClick={() => {
+                      handleEdit(selectedTransaction);
+                      setIsDetailModalOpen(false);
+                    }}
+                    className="flex-1"
+                    variant="secondary"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit Nota
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      openFinalizeConfirm(selectedTransaction);
+                      setIsDetailModalOpen(false);
+                    }}
+                    className="flex-1"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Finalisasi
+                  </Button>
+                </>
+              )}
+              <Button
+                onClick={() => exportToPDF(selectedTransaction)}
+                className={selectedTransaction.status === 'pending' ? 'flex-1' : 'w-full'}
+              >
+                <Download className="w-4 h-4" />
+                Download PDF
+              </Button>
+            </div>
           </div>
         )}
       </Modal>
 
+      {/* Edit Nota Modal */}
+      {editingTransaction && (
+        <EditNotaModal
+          isOpen={editModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setEditingTransaction(null);
+          }}
+          transaction={editingTransaction}
+          onSuccess={onSuccess}
+          onError={onError}
+          onUpdate={fetchTransactions}
+        />
+      )}
+
+      {/* Finalize Confirmation Modal */}
+      <Modal
+        isOpen={finalizeConfirmModal.isOpen}
+        onClose={() => setFinalizeConfirmModal({ isOpen: false, transactionId: null, transactionNumber: '' })}
+        title="Finalisasi Nota"
+      >
+        <div className="space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800 font-medium text-sm">
+              Perhatian: Setelah difinalisasi, nota tidak dapat diedit lagi.
+            </p>
+            <p className="text-yellow-700 text-xs mt-1">
+              Nota hanya dapat dilihat, didownload, dan dihapus.
+            </p>
+          </div>
+          <p className="text-gray-600">
+            Yakin ingin memfinalisasi nota <span className="font-semibold text-black">{finalizeConfirmModal.transactionNumber}</span>?
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => setFinalizeConfirmModal({ isOpen: false, transactionId: null, transactionNumber: '' })}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => finalizeConfirmModal.transactionId && handleFinalize(finalizeConfirmModal.transactionId)}
+            >
+              Finalisasi
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={deleteConfirmModal.isOpen}
         onClose={() => setDeleteConfirmModal({ isOpen: false, transactionId: null, transactionNumber: '' })}
         title="Konfirmasi Hapus"
       >
         <div className="space-y-4">
+          {transactions.find(t => t.id === deleteConfirmModal.transactionId)?.status === 'completed' && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 font-medium text-sm">
+                Peringatan: Anda akan menghapus nota yang sudah difinalisasi.
+              </p>
+              <p className="text-red-700 text-xs mt-1">
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+          )}
           <p className="text-gray-600">
             Yakin ingin menghapus transaksi <span className="font-semibold text-black">{deleteConfirmModal.transactionNumber}</span>?
           </p>

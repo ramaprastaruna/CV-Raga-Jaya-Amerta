@@ -4,6 +4,7 @@ import { supabase, Product, Customer, Sales } from '../lib/supabase';
 import { Textarea } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
+import { getDiscountInfo, getPriceForQuantity } from '../utils/discountCalculator';
 
 interface CreateNotaProps {
   items: Array<{ product: Product; quantity: number; unit: string }>;
@@ -122,80 +123,6 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
     }
   };
 
-  const getDiscountInfo = (product: Product, quantity: number, unit?: string) => {
-    if (!product.discount_tiers || product.discount_tiers.length === 0) {
-      return {
-        finalPrice: product.price,
-        hasDiscount: false,
-        tier: null,
-        discounts: []
-      };
-    }
-
-    const exactTier = product.discount_tiers.find(
-      tier => tier.isExact && tier.minQuantity === quantity && (!unit || tier.unit === unit)
-    );
-
-    if (exactTier) {
-      const basePrice = product.base_price || product.price;
-      let pricePerUnit = basePrice;
-      const discounts = [];
-
-      pricePerUnit = pricePerUnit - (pricePerUnit * exactTier.discount) / 100;
-      discounts.push(exactTier.discount);
-
-      if (exactTier.discount2 && exactTier.discount2 > 0) {
-        pricePerUnit = pricePerUnit - (pricePerUnit * exactTier.discount2) / 100;
-        discounts.push(exactTier.discount2);
-      }
-
-      return {
-        finalPrice: pricePerUnit,
-        hasDiscount: true,
-        tier: exactTier,
-        discounts
-      };
-    }
-
-    const sortedTiers = [...product.discount_tiers]
-      .filter(tier => !tier.isExact && (!unit || tier.unit === unit))
-      .sort((a, b) => b.minQuantity - a.minQuantity);
-
-    const applicableTier = sortedTiers.find(tier => quantity >= tier.minQuantity);
-
-    if (!applicableTier) {
-      return {
-        finalPrice: product.price,
-        hasDiscount: false,
-        tier: null,
-        discounts: []
-      };
-    }
-
-    const basePrice = product.base_price || product.price;
-    let pricePerUnit = basePrice;
-    const discounts = [];
-
-    pricePerUnit = pricePerUnit - (pricePerUnit * applicableTier.discount) / 100;
-    discounts.push(applicableTier.discount);
-
-    if (applicableTier.discount2 && applicableTier.discount2 > 0) {
-      pricePerUnit = pricePerUnit - (pricePerUnit * applicableTier.discount2) / 100;
-      discounts.push(applicableTier.discount2);
-    }
-
-    return {
-      finalPrice: pricePerUnit,
-      hasDiscount: true,
-      tier: applicableTier,
-      discounts
-    };
-  };
-
-  const getPriceForQuantity = (product: Product, quantity: number, unit?: string): number => {
-    return getDiscountInfo(product, quantity, unit).finalPrice;
-  };
-
   const totalAmount = items.reduce(
     (sum, item) => {
       const finalPrice = getPriceForQuantity(item.product, item.quantity, item.unit);
@@ -265,7 +192,7 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
           sales_id: selectedSalesId || null,
           sales_name: formData.salesName || null,
           created_by: user?.id,
-          status: 'completed',
+          status: 'pending',
         })
         .select()
         .single();
@@ -389,12 +316,13 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
             <h3 className="font-semibold text-black">Informasi Sales</h3>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Pilih Sales
+                Pilih Sales <span className="text-red-500">*</span>
               </label>
               <select
                 value={selectedSalesId}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSalesSelect(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                required
               >
                 <option value="">-- Pilih Sales --</option>
                 {salesList.map((sales) => (
@@ -429,8 +357,9 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
               <select
                 value={selectedCustomerId}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleCustomerSelect(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
+                disabled={!selectedSalesId}
               >
                 <option value="">-- Pilih Customer --</option>
                 {customers.map((customer) => (
@@ -569,7 +498,6 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
                     <input
                       type="text"
                       value={formData.paymentTermsDays}
-                      placeholder="Ketik term of payment custom"
                       onChange={(e) => setFormData({ ...formData, paymentTermsDays: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       autoFocus
@@ -582,14 +510,9 @@ export const CreateNota: React.FC<CreateNotaProps> = ({
                     type="text"
                     value={formData.paymentTermsDays}
                     onChange={(e) => setFormData({ ...formData, paymentTermsDays: e.target.value })}
-                    placeholder="Contoh: Cash, NET 30, NET 60"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                    disabled={!selectedCustomerId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
-                  {selectedCustomerId && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Customer ini belum memiliki term of payment. Silakan ketik manual atau tambahkan di halaman Customer.
-                    </p>
-                  )}
                 </div>
               )}
             </div>
