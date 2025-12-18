@@ -219,14 +219,14 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
             variant={activeTab === 'draft' ? 'primary' : 'secondary'}
             className="text-sm"
           >
-            Draft ({transactions.filter(t => t.status === 'pending').length})
+            Draft
           </Button>
           <Button
             onClick={() => setActiveTab('final')}
             variant={activeTab === 'final' ? 'primary' : 'secondary'}
             className="text-sm"
           >
-            Final ({transactions.filter(t => t.status === 'completed').length})
+            Final
           </Button>
           <div className="w-px h-6 bg-gray-300"></div>
           <Button
@@ -400,11 +400,6 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
               ? 'Tidak ada nota draft'
               : 'Tidak ada nota final'}
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            {activeTab === 'draft'
-              ? 'Buat nota baru dari menu Buat Nota'
-              : 'Finalisasi nota draft untuk menampilkannya disini'}
-          </p>
         </div>
       )}
 
@@ -467,14 +462,28 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
               </div>
             )}
 
-            {(selectedTransaction as any).payment_terms_days && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Term of Payment</p>
-                <p className="font-medium text-black">
-                  {(selectedTransaction as any).payment_terms_days}
-                </p>
-              </div>
-            )}
+            {(selectedTransaction as any).payment_terms_days && (() => {
+              const paymentTerms = (selectedTransaction as any).payment_terms_days;
+              const daysMatch = paymentTerms.match(/(\d+)/);
+              let dueDate = '';
+
+              if (daysMatch) {
+                const days = parseInt(daysMatch[1]);
+                const transactionDate = new Date(selectedTransaction.created_at);
+                const calculatedDueDate = new Date(transactionDate);
+                calculatedDueDate.setDate(calculatedDueDate.getDate() + days);
+                dueDate = calculatedDueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+              }
+
+              return (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-1">Term of Payment</p>
+                  <p className="font-medium text-black">
+                    {paymentTerms}{dueDate && ` (${dueDate})`}
+                  </p>
+                </div>
+              );
+            })()}
 
             <div>
               <h3 className="font-semibold text-black mb-3">Produk</h3>
@@ -494,7 +503,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                       <th className="px-3 py-2 text-right text-xs font-semibold text-black w-40">
                         Harga/Unit
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-black">
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-black w-24">
                         Diskon
                       </th>
                       <th className="px-3 py-2 text-right text-xs font-semibold text-black w-40">
@@ -519,6 +528,9 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                       const discountAmount = Number(item.discount_amount || 0);
                       const unitPrice = Number(item.unit_price || 0);
                       const subtotal = Number(item.subtotal || 0);
+
+                      // Calculate base price (before discount)
+                      const basePricePerUnit = unitPrice + discountAmount;
 
                       // Get discount breakdown text
                       let discountBreakdown = '';
@@ -546,7 +558,7 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
                             {displayUnit}
                           </td>
                           <td className="px-3 py-2 text-sm text-right text-gray-600">
-                            Rp {(Math.round(unitPrice * 100) / 100).toLocaleString('id-ID')}
+                            Rp {(Math.round(basePricePerUnit * 100) / 100).toLocaleString('id-ID')}
                           </td>
                           <td className="px-3 py-2 text-sm text-center text-gray-600">
                             {discountBreakdown || '-'}

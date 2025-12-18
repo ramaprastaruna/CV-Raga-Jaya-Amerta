@@ -192,6 +192,9 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
     const unitPriceAfterDiscount = Number(item.unit_price || 0);
     const subtotal = Number(item.subtotal || 0);
 
+    // Calculate base price (before discount)
+    const basePricePerUnit = unitPriceAfterDiscount + discountAmount;
+
     // Get discount breakdown text (percentage only)
     let discountDisplay = '-';
     if (item.discount_details) {
@@ -210,7 +213,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
       nameWithoutUnit,
       displayQty,
       displayUnit,
-      `Rp ${Math.round(unitPriceAfterDiscount).toLocaleString('id-ID')}`,
+      `Rp ${Math.round(basePricePerUnit).toLocaleString('id-ID')}`,
       discountDisplay,
       `Rp ${Math.round(subtotal).toLocaleString('id-ID')}`,
     ];
@@ -266,7 +269,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
       2: { halign: 'center', cellWidth: 10 },
       3: { halign: 'center', cellWidth: 13 },
       4: { halign: 'right', cellWidth: 23 },
-      5: { halign: 'center', cellWidth: 10 },
+      5: { halign: 'center', cellWidth: 16 },
       6: { halign: 'right', cellWidth: 26 },
     },
     margin: { left: margin, right: margin, bottom: 35 },

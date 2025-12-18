@@ -945,7 +945,7 @@ export const Products: React.FC<ProductsProps> = ({ onError, onSuccess, onCreate
       <Modal
         isOpen={showCart}
         onClose={() => setShowCart(false)}
-        title="Keranjang Belanja"
+        title="Keranjang"
       >
         {cart.length === 0 ? (
           <div className="text-center py-8">
