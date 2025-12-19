@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Calendar, Download, Edit2, CheckCircle, X } from 'lucide-react';
+import { Search, Eye, Trash2, Calendar, Download, Edit2, CheckCircle, X, FileText } from 'lucide-react';
 import { supabase, TransactionWithItems } from '../lib/supabase';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
@@ -209,67 +209,80 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-black">Nota</h2>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <Button
-            onClick={() => setActiveTab('draft')}
-            variant={activeTab === 'draft' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Draft
-          </Button>
-          <Button
-            onClick={() => setActiveTab('final')}
-            variant={activeTab === 'final' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Final
-          </Button>
-          <div className="w-px h-6 bg-gray-300"></div>
-          <Button
-            onClick={() => setTimePeriod('all')}
-            variant={timePeriod === 'all' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Semua
-          </Button>
-          <Button
-            onClick={() => setTimePeriod('year')}
-            variant={timePeriod === 'year' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Tahun Ini
-          </Button>
-          <Button
-            onClick={() => setTimePeriod('month')}
-            variant={timePeriod === 'month' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Bulan Ini
-          </Button>
-          <Button
-            onClick={() => setTimePeriod('today')}
-            variant={timePeriod === 'today' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Hari Ini
-          </Button>
-          {(timePeriod === 'all' || timePeriod === 'year') && (
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
-              aria-label="Pilih Bulan"
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-black mb-8">Nota</h2>
+
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          {/* Tab Draft/Final with premium pill design */}
+          <div className="inline-flex items-center bg-gray-100 rounded-xl p-1.5 gap-1">
+            <button
+              onClick={() => setActiveTab('draft')}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                activeTab === 'draft'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
             >
-              <option value={-1}>Semua Bulan</option>
-              {monthNames.map((m, idx) => (
-                <option key={m} value={idx}>{m}</option>
-              ))}
-            </select>
-          )}
+              <FileText className="w-4 h-4" />
+              Draft
+            </button>
+            <button
+              onClick={() => setActiveTab('final')}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                activeTab === 'final'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <CheckCircle className="w-4 h-4" />
+              Final
+            </button>
+          </div>
+
+          {/* Time Period Filters with refined design */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <Button
+              onClick={() => setTimePeriod('all')}
+              variant={timePeriod === 'all' ? 'primary' : 'secondary'}
+              className="text-sm"
+            >
+              Semua
+            </Button>
+            <Button
+              onClick={() => setTimePeriod('year')}
+              variant={timePeriod === 'year' ? 'primary' : 'secondary'}
+              className="text-sm"
+            >
+              Tahun Ini
+            </Button>
+            <Button
+              onClick={() => setTimePeriod('month')}
+              variant={timePeriod === 'month' ? 'primary' : 'secondary'}
+              className="text-sm"
+            >
+              Bulan Ini
+            </Button>
+            <Button
+              onClick={() => setTimePeriod('today')}
+              variant={timePeriod === 'today' ? 'primary' : 'secondary'}
+              className="text-sm"
+            >
+              Hari Ini
+            </Button>
+            {(timePeriod === 'all' || timePeriod === 'year') && (
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
+                aria-label="Pilih Bulan"
+              >
+                <option value={-1}>Semua Bulan</option>
+                {monthNames.map((m, idx) => (
+                  <option key={m} value={idx}>{m}</option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
       </div>
 
