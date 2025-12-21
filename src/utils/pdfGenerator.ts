@@ -17,8 +17,10 @@ interface Transaction {
   customer_name: string;
   customer_address?: string;
   sales_name?: string;
+  sales_phone?: string;
   transaction_date: string;
   payment_terms_days?: string;
+  notes?: string;
   transaction_items: TransactionItem[];
   total_amount: number;
   grand_total: number;
@@ -156,6 +158,13 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text(transaction.sales_name || '-', salesXPosition, customerY + 5.5, { align: 'right' });
+
+  if (transaction.sales_phone) {
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(transaction.sales_phone, salesXPosition, customerY + 8.5, { align: 'right' });
+  }
 
   const rightColX = rightBoxX + 1.5;
   doc.setFontSize(6);
@@ -374,21 +383,32 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   doc.setTextColor(0, 0, 0);
   doc.text(`Rp ${Math.round(grandTotal).toLocaleString('id-ID')}`, grandTotalBoxX + grandTotalBoxW - 2.5, grandTotalBoxY + 13, { align: 'right' });
 
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'italic');
-  doc.setTextColor(110, 110, 110);
-  doc.text('* Barang diterima dalam kondisi baik', margin, finalY + paymentBoxHeight + 3);
+  // Tampilkan catatan jika ada
+  if (transaction.notes && transaction.notes.trim()) {
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(110, 110, 110);
+    const notesY = finalY + paymentBoxHeight + 3;
+    doc.text(`Catatan: ${transaction.notes}`, margin, notesY);
+  }
 
   const signatureY = pageHeight - 30;
   const leftSignX = margin + 30;
   const rightSignX = pageWidth - margin - 30;
 
+  // Teks "Barang diterima dalam kondisi baik" di atas tanggal (sisi kanan)
+  const noticeY = signatureY - 4;
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(110, 110, 110);
+  doc.text('* Barang diterima dalam kondisi baik', rightSignX, noticeY, { align: 'center' });
+
+  // Tanggal hanya untuk pengirim (kiri)
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
   const dateText = `Blitar, ${new Date(transaction.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
   doc.text(dateText, leftSignX, signatureY, { align: 'center' });
-  doc.text(dateText, rightSignX, signatureY, { align: 'center' });
 
   doc.setLineWidth(0.15);
   doc.setDrawColor(0, 0, 0);

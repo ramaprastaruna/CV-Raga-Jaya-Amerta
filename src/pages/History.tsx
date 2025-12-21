@@ -159,9 +159,14 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
   const handleFinalize = async (id: string) => {
     try {
+      const now = new Date().toISOString();
       const { error } = await supabase
         .from('transactions')
-        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .update({
+          status: 'completed',
+          created_at: now,
+          updated_at: now
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -181,13 +186,26 @@ export const History: React.FC<HistoryProps> = ({ onError, onSuccess }) => {
 
   const exportToPDF = async (transaction: TransactionWithItems) => {
     try {
+      // Fetch sales phone if sales_id exists
+      let salesPhone = undefined;
+      if ((transaction as any).sales_id) {
+        const { data: salesData } = await supabase
+          .from('sales')
+          .select('phone')
+          .eq('id', (transaction as any).sales_id)
+          .single();
+        salesPhone = salesData?.phone;
+      }
+
       await generateInvoicePDF({
         transaction_number: transaction.transaction_number,
         customer_name: transaction.customer_name,
         customer_address: transaction.customer_address,
         sales_name: (transaction as any).sales_name,
+        sales_phone: salesPhone,
         transaction_date: transaction.created_at,
         payment_terms_days: (transaction as any).payment_terms_days,
+        notes: transaction.notes,
         transaction_items: transaction.transaction_items,
         total_amount: transaction.total_amount || 0,
         grand_total: transaction.grand_total || transaction.total_amount || 0,

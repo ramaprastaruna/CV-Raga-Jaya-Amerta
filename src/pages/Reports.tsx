@@ -200,7 +200,10 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     }
   };
 
-  const calculateDueDate = (createdAt: string, paymentTerms: string): string => {
+  const getPaymentTerm = (paymentTerms: string, createdAt: string): string => {
+    const cashMatch = paymentTerms?.match(/cash/i);
+    if (cashMatch) return 'Cash';
+
     const daysMatch = paymentTerms?.match(/(\d+)/);
     if (!daysMatch) return '-';
 
@@ -208,11 +211,13 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     const date = new Date(createdAt);
     date.setDate(date.getDate() + days);
 
-    return date.toLocaleDateString('id-ID', {
+    const dueDate = date.toLocaleDateString('id-ID', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
+
+    return `${days} hari (${dueDate})`;
   };
 
   const exportToExcel = async () => {
@@ -235,7 +240,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     worksheet.addRow([]);
 
     // Add header row
-    const headerRow = worksheet.addRow(['No. Transaksi', 'Sales', 'Customer', 'Tgl Dikirim', 'Tgl Jatuh Tempo', 'Total per Inv']);
+    const headerRow = worksheet.addRow(['No. Transaksi', 'Sales', 'Customer', 'Tanggal', 'Term of Payment', 'Total']);
     headerRow.font = { bold: true, size: 11 };
     headerRow.alignment = { vertical: 'middle', horizontal: 'left' };
     headerRow.eachCell((cell) => {
@@ -259,7 +264,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
           month: 'short',
           year: 'numeric',
         }),
-        calculateDueDate(item.created_at, item.payment_terms_days),
+        getPaymentTerm(item.payment_terms_days, item.created_at),
         item.total_amount,
       ]);
 
@@ -298,7 +303,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
     });
 
     // Add total row
-    const totalRow = worksheet.addRow(['', '', '', '', 'TOTAL', totalAmount]);
+    const totalRow = worksheet.addRow(['', '', '', '', 'SUBTOTAL', totalAmount]);
     totalRow.font = { bold: true, size: 11 };
 
     totalRow.eachCell((cell, colNumber) => {
@@ -609,13 +614,13 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
                         Customer
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                        Tgl Dikirim
+                        Tanggal
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                        Tgl Jatuh Tempo
+                        Term of Payment
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-black uppercase tracking-wider">
-                        Total per Inv
+                        Total
                       </th>
                     </tr>
                   </thead>
@@ -639,7 +644,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
-                          {calculateDueDate(item.created_at, item.payment_terms_days)}
+                          {getPaymentTerm(item.payment_terms_days, item.created_at)}
                         </td>
                         <td className="px-4 py-3 text-sm text-black font-medium text-right">
                           Rp {item.total_amount.toLocaleString('id-ID')}
@@ -650,7 +655,7 @@ export const Reports: React.FC<ReportsProps> = ({ onError }) => {
                   <tfoot className="bg-gray-50 border-t-2 border-gray-300">
                     <tr>
                       <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-black text-right">
-                        Total
+                        Subtotal
                       </td>
                       <td className="px-4 py-3 text-sm font-bold text-black text-right">
                         Rp {recapData.reduce((sum, item) => sum + item.total_amount, 0).toLocaleString('id-ID')}

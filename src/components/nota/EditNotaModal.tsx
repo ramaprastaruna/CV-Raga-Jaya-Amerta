@@ -3,7 +3,7 @@ import { X, Trash2, Plus } from 'lucide-react';
 import { supabase, TransactionWithItems, Product, Customer, Sales } from '../../lib/supabase';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { Input, Textarea } from '../ui/Input';
+import { Textarea } from '../ui/Input';
 import { ProductSelector } from './ProductSelector';
 import { parseTransactionItemsToCart, CartItem } from '../../utils/transactionParser';
 import { getDiscountInfo } from '../../utils/discountCalculator';
@@ -480,7 +480,7 @@ export const EditNotaModal: React.FC<EditNotaModalProps> = ({
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
