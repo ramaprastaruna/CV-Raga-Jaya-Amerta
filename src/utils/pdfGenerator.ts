@@ -410,6 +410,15 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
   doc.setLineWidth(0.15);
   doc.setDrawColor(0, 0, 0);
   doc.line(leftSignX - 15, signatureY + 17, leftSignX + 15, signatureY + 17);
+
+  // Garis tanda tangan di tengah
+  const centerSignX = pageWidth / 2;
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  doc.text('Pengirim', centerSignX, signatureY, { align: 'center' });
+  doc.line(centerSignX - 15, signatureY + 17, centerSignX + 15, signatureY + 17);
+
   doc.line(rightSignX - 15, signatureY + 17, rightSignX + 15, signatureY + 17);
 
   doc.setFontSize(8);
