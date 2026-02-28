@@ -278,7 +278,7 @@ export const generateInvoicePDF = async (transaction: Transaction) => {
       5: { halign: 'center', cellWidth: 16 },
       6: { halign: 'right', cellWidth: 26 },
     },
-    margin: { left: margin, right: margin, bottom: 35 },
+    margin: { left: margin, right: margin, bottom: 35, top: 26 },
     didDrawPage: (data) => {
       if (data.pageNumber > 1) {
         drawHeader();
